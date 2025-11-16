@@ -24,40 +24,23 @@ class SoundManagementCog(commands.Cog):
                                  attachment: typing.Optional[discord.Attachment],
                                  guild_identifier=None,
                                 ):
-        try:
-            guild = self.__parse_guild(ctx, guild_identifier) 
-            (sound_name, sound_weight) = self.__parse_sound_info(sound_name,
-                                                                 sound_weight) 
-        except Exception as e:
-            print(e)
-            traceback.print_exc()
-            await ctx.reply(str(e))
-            return
+        async with ctx.typing():
+            if not attachment or 'audio' not in attachment.content_type:
+                await ctx.reply('Must attach audio file')
+                return
 
-        if not attachment or 'audio' not in attachment.content_type:
-            await ctx.reply('Must attach audio file')
-            return
+            extension = ''.join(pathlib.Path(attachment.filename).suffixes)
+            work_path = pathlib.Path('./work/attachment{}'.format(extension))
 
+            work_path.parent.mkdir(parents=True, exist_ok=True)
+            await attachment.save(work_path)
 
-        file_path = pathlib.Path('./sounds/{}/{}/{}.mp3'.format(ctx.author.name,
-                                                                guild.name,
-                                                                sound_name,
-                                                               ))
-
-        extension = ''.join(pathlib.Path(attachment.filename).suffixes)
-        work_path = pathlib.Path('./work/attachment{}'.format(extension))
-
-        work_path.parent.mkdir(parents=True, exist_ok=True)
-        await attachment.save(work_path)
-
-        try:
-            self.__process_sound(work_path, file_path, sound_weight)
-            await ctx.reply('Successfully added sound {} to server {}'.format(
-                                sound_name, guild.name))
-        except Exception as e:
-            await ctx.reply('Could not convert audio file: ' + str(e))
-            print(e)
-            raise
+            await ctx.reply(self.__add_sound_common(ctx,
+                                                    sound_name,
+                                                    sound_weight,
+                                                    guild_identifier,
+                                                    work_path))
+            work_path.unlink()
 
 
     @commands.command()
@@ -70,22 +53,19 @@ class SoundManagementCog(commands.Cog):
                                 sound_weight,
                                 guild_identifier=None,
                                ):
+
         try:
-            guild = self.__parse_guild(ctx, guild_identifier) 
-            (sound_name, sound_weight) = self.__parse_sound_info(sound_name,
-                                                                 sound_weight) 
             start_time = float(start_time)
             end_time = float(end_time)
         except Exception as e:
-            print(e)
-            traceback.print_exc()
-            await ctx.reply(str(e))
+            await ctx.reply('Start/end time invalid: ' + str(e))
+            return
 
         async with ctx.typing():
             try:
                 yt_opts = {
                     'verbose': True,
-                    'download_ranges': 
+                    'download_ranges':
                         yt_dlp.utils.download_range_func(None, [(start_time,
                                                                  end_time)]),
                     'force_keyframes_at_cuts': True,
@@ -94,31 +74,20 @@ class SoundManagementCog(commands.Cog):
                     'noplaylist':True,
                 }
 
-
                 with yt_dlp.YoutubeDL(yt_opts) as ydl:
                     info_dict = ydl.extract_info(url, download=True)
                     work_path = pathlib.Path(ydl.prepare_filename(info_dict))
 
+                await ctx.reply(self.__add_sound_common(ctx,
+                                                        sound_name,
+                                                        sound_weight,
+                                                        guild_identifier,
+                                                        work_path))
+                work_path.unlink()
 
-                file_path = pathlib.Path('./sounds/{}/{}/{}.mp3'.format(ctx.author.name,
-                                                                        guild.name,
-                                                                        sound_name,
-                                                                       ))
-                    
             except Exception as e:
+                print(e)
                 traceback.print_exc()
-                print(e)
-
-
-            try:
-                self.__process_sound(work_path, file_path, sound_weight)
-                await ctx.reply('Successfully added sound {} to server {}'.format(
-                                    sound_name, guild.name))
-            except Exception as e:
-                await ctx.reply('Could not convert audio file: ' + str(e))
-                print(e)
-                raise
-
 
 
     @commands.command()
@@ -127,8 +96,8 @@ class SoundManagementCog(commands.Cog):
                            sound_name,
                            guild_identifier=None):
         try:
-            guild = self.__parse_guild(ctx, guild_identifier) 
-            (sound_name, _) = self.__parse_sound_info(sound_name) 
+            guild = self.__parse_guild(ctx, guild_identifier)
+            (sound_name, _) = self.__parse_sound_info(sound_name)
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -139,7 +108,7 @@ class SoundManagementCog(commands.Cog):
                       guild.name /
                       sound_name
                      ).with_suffix('.mp3')
-        
+
         if not sound_path.is_file():
             await ctx.reply('Sound file does not exist')
         else:
@@ -169,7 +138,7 @@ class SoundManagementCog(commands.Cog):
             lines = ['Here are your sounds for all servers']
         else:
             try:
-                guild = self.__parse_guild(ctx, guild_identifier) 
+                guild = self.__parse_guild(ctx, guild_identifier)
             except Exception as e:
                 print(e)
                 traceback.print_exc()
@@ -185,13 +154,13 @@ class SoundManagementCog(commands.Cog):
                  ]
 
         await ctx.reply('\n'.join(lines))
-        
+
 
     @commands.command()
     async def test_sound(self, ctx, sound_name, guild_identifier=None):
         try:
-            guild = self.__parse_guild(ctx, guild_identifier) 
-            (sound_name, _) = self.__parse_sound_info(sound_name) 
+            guild = self.__parse_guild(ctx, guild_identifier)
+            (sound_name, _) = self.__parse_sound_info(sound_name)
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -209,8 +178,32 @@ class SoundManagementCog(commands.Cog):
                 print(e)
             await ctx.reply(file=file, content='Here is {}'.format(sound_name))
 
-    def __add_sound_common(self, arg):
-        pass
+
+    def __add_sound_common(self,
+                           ctx,
+                           sound_name,
+                           sound_weight,
+                           guild_identifier,
+                           work_path,
+                          ):
+        try:
+            guild = self.__parse_guild(ctx, guild_identifier)
+            (sound_name, sound_weight) = self.__parse_sound_info(sound_name,
+                                                                 sound_weight)
+        except Exception as e:
+            return str(e)
+
+        file_path = pathlib.Path('./sounds/{}/{}/{}.mp3'.format(ctx.author.name,
+                                                                guild.name,
+                                                                sound_name,
+                                                               ))
+
+        try:
+            self.__process_sound(work_path, file_path, sound_weight)
+            return 'Successfully added sound {} to server {}'.format(
+                        sound_name, guild.name)
+        except Exception as e:
+            return 'Could not convert audio file: ' + str(e)
 
 
     def __parse_guild(self, ctx, guild_identifier):
@@ -244,7 +237,7 @@ class SoundManagementCog(commands.Cog):
 
         return sound_name, sound_weight
 
-    
+
     def __process_sound(self, sound_path, save_path, sound_weight):
         sound = pydub.AudioSegment.from_file(sound_path)
 
