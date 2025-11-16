@@ -7,6 +7,8 @@ import discord
 from discord.ext import commands
 import dotenv
 
+import sound_management_cog
+
 dotenv.load_dotenv()
 discord_token = os.getenv('DISCORD_TOKEN')
 
@@ -28,6 +30,7 @@ async def on_ready():
 
 async def main():
     async with bot:
+        await bot.add_cog(sound_management_cog.SoundManagementCog(bot))
         await bot.start(discord_token)
 
 asyncio.run(main())
