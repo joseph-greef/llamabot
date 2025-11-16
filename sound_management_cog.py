@@ -57,6 +57,8 @@ class SoundManagementCog(commands.Cog):
         try:
             start_time = float(start_time)
             end_time = float(end_time)
+            if end_time <= start_time:
+                raise Exception('End time before start time')
         except Exception as e:
             await ctx.reply('Start/end time invalid: ' + str(e))
             return
@@ -88,6 +90,7 @@ class SoundManagementCog(commands.Cog):
             except Exception as e:
                 print(e)
                 traceback.print_exc()
+                await ctx.reply(str(e))
 
 
     @commands.command()
