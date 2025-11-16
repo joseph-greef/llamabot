@@ -11,12 +11,13 @@ import yt_dlp
 
 
 class SoundManagementCog(commands.Cog):
+    MAX_SOUND_MS = 6000.0
     def __init__(self, bot):
         self.__bot = bot
 
 
-
-    @commands.command()
+    @commands.command(description='adfadf', usage='kl;jl;jk', help='opiaopdfia', 
+                      brief='[sound_name] [sound_weight] [server]', )
     async def add_sound_attached(self,
                                  ctx,
                                  sound_name,
@@ -244,7 +245,7 @@ class SoundManagementCog(commands.Cog):
     def __process_sound(self, sound_path, save_path, sound_weight):
         sound = pydub.AudioSegment.from_file(sound_path)
 
-        speedup_factor = len(sound) / 5000.0
+        speedup_factor = len(sound) / self.MAX_SOUND_MS
 
         if speedup_factor > 1:
             new_frame_rate = int(sound.frame_rate * speedup_factor)
