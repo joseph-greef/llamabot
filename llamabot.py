@@ -8,29 +8,29 @@ from discord.ext import commands
 import dotenv
 
 import sound_management_cog
+import meta_cog
 
-dotenv.load_dotenv()
-discord_token = os.getenv('DISCORD_TOKEN')
-
-intents = discord.Intents.default()
-intents.members = True
-intents.message_content = True
-bot = commands.Bot(
-    command_prefix=commands.when_mentioned_or('!'),
-    intents=intents,
-)
-
-@bot.event
-async def on_ready():
-    assert bot.user is not None
-
-    print(f'Logged in as {bot.user} (ID: {bot.user.id})')
-    print('------')
-
-
-async def main():
+async def bot_loop(bot, token):
     async with bot:
         await bot.add_cog(sound_management_cog.SoundManagementCog(bot))
-        await bot.start(discord_token)
+        await bot.add_cog(meta_cog.MetaCog(bot))
+        await bot.start(token)
 
-asyncio.run(main())
+def main():
+    if not dotenv.load_dotenv():
+        print('You must create and populate a .env file')
+
+    discord_token = os.getenv('DISCORD_TOKEN')
+
+    intents = discord.Intents.default()
+    intents.members = True
+    intents.message_content = True
+    bot = commands.Bot(
+        command_prefix=commands.when_mentioned_or('!'),
+        intents=intents,
+    )
+
+    asyncio.run(bot_loop(bot, discord_token))
+
+if __name__ == '__main__':
+    main()
