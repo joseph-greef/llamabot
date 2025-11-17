@@ -9,6 +9,8 @@ import discord
 from discord.ext import commands
 import pydub
 
+import mixed_audio
+
 
 class VoiceCog(commands.Cog):
     def __init__(self, bot):
@@ -37,15 +39,14 @@ class VoiceCog(commands.Cog):
                     if not voice_client:
                         #connect to the channel and start playing a sound
                         voice_client = await after.channel.connect()
-                        source = discord.FFmpegPCMAudio(sound_path)
-                        #source = discord.PCMVolumeTransformer(source)
-                        after_func = functools.partial(self.__post_sound_cleanup,
-                                                       voice_client)
-                        voice_client.play(source, after=after_func)
+                        source = mixed_audio.MixedAudio(sound_path)
+                        after = functools.partial(self.__post_sound_cleanup,
+                                                  voice_client)
+                        voice_client.play(source, after=after)
                     #bot already in this channel
                     elif voice_client.channel == after.channel:
-                        #Add the sound to the audio mixer
-                        pass
+                        print('adfadf')
+                        voice_client.source.add_sound(sound_path) 
                     #bot in another channel
                     else:
                         #TODO: Make a queue for it to to play sounds on another channel
