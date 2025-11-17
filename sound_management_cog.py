@@ -313,10 +313,14 @@ class SoundManagementCog(commands.Cog):
             new_frame_rate = int(sound.frame_rate * speedup_factor)
             sound = sound._spawn(sound.raw_data,
                                  overrides={'frame_rate': new_frame_rate})
-            sound = sound.set_frame_rate(44100)
 
+        #discord takes in 48kHz sound, so preprocess sound files to match
+        sound = sound.set_frame_rate(48000)
+        sound = sound.set_channels(2)
+        sound = sound.set_sample_width(2)
         sound = sound.fade_in(250)
         sound = sound.fade_out(250)
+        sound = pydub.effects.normalize(sound)
 
         save_path.parent.mkdir(parents=True, exist_ok=True)
         sound.export(save_path, tags={'weight':sound_weight})
