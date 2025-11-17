@@ -21,7 +21,8 @@ class VoiceCog(commands.Cog):
         async def on_voice_state_update(member, before, after):
           try:
             #Do not do anything for our own events
-            if member.id == 1439452220700622878:
+            if member == self.__bot.user:
+                print('adfadf')
                 return
 
             #options for when a user joins a channel:
@@ -36,7 +37,7 @@ class VoiceCog(commands.Cog):
                 sound_path = self.__get_sound_path(member.name, guild)
                 if sound_path:
                     voice_client = self.__get_voice_client_by_guild(guild)
-                    #bot not in any channel here
+                    #bot not in any channel
                     if not voice_client:
                         #connect to the channel and start playing a sound
                         voice_client = await channel.connect()
@@ -46,7 +47,7 @@ class VoiceCog(commands.Cog):
                         voice_client.play(source, after=after)
                     #bot already in this channel
                     elif voice_client.channel == channel:
-                        voice_client.source.add_sound(sound_path) 
+                        voice_client.source.add_sound(sound_path)
                     #bot in another channel
                     else:
                         if guild not in self.__upcoming_duties:
@@ -60,7 +61,7 @@ class VoiceCog(commands.Cog):
             print(e)
 
 
-    @commands.command()
+    @commands.command(brief='Forces bot to leave the server')
     async def leave(self, ctx):
         await ctx.voice_client.disconnect()
 

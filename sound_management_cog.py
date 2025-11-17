@@ -27,7 +27,7 @@ class SoundManagementCog(commands.Cog):
         If the audio file is longer than 6 seconds, it is sped up chipmunk style to meet the time limit. All files are given a 250ms fade in/fade out to prevent unintentional speaker clipping.
 
         If run in a server this command will add the sound to your list for that server, if run in DMs you must specify the server. See !list_servers for a list of valid servers.""",
-        brief="""[name] [weight] [server]""",
+        brief="""[name] [weight] [guild_identifer]""",
         aliases=['asa'])
     async def add_sound_attached(self, ctx,
             sound_name=commands.parameter(
@@ -37,7 +37,7 @@ class SoundManagementCog(commands.Cog):
             attachment: typing.Optional[discord.Attachment]=commands.parameter(
                 description='Audio file attached to the message'),
             guild_identifier=commands.parameter(default=None,
-                description='Server name or server ID'),
+                description='Server name or server ID. With spaces you must use quotes'),
            ):
 
         async with ctx.typing(), self.__attachment_lock:
@@ -57,7 +57,6 @@ class SoundManagementCog(commands.Cog):
                                                     guild_identifier,
                                                     work_path))
             work_path.unlink()
-
 
     #####################
     # add_sound_youtube #
@@ -82,7 +81,7 @@ class SoundManagementCog(commands.Cog):
             sound_weight=commands.parameter(
                  description='Probability that this sound is chosen compared to others'),
             guild_identifier=commands.parameter(default=None,
-                 description='Server name or server ID'),
+                 description='Server name or server ID. With spaces you must use quotes'),
            ):
 
         try:
@@ -102,7 +101,7 @@ class SoundManagementCog(commands.Cog):
                         yt_dlp.utils.download_range_func(None, [(start_time,
                                                                  end_time)]),
                     'force_keyframes_at_cuts': True,
-                    'format':'ba.2', #2nd best audio only format
+                    'format':'ba', #best audio only format
                     'outtmpl':'work/youtube.%(ext)s',
                     'noplaylist':True,
                 }
@@ -159,7 +158,6 @@ class SoundManagementCog(commands.Cog):
             await ctx.reply('Successfully deleted sound {} from server {}'.format(
                                 sound_name, guild.name))
 
-
     ################
     # list_servers #
     ################
@@ -171,7 +169,7 @@ class SoundManagementCog(commands.Cog):
         #List server names/ids of servers that are shared
         lines = (['Here is a list of our shared servers and their internal IDs'] +
                  ['name - id'] +
-                 ['{} - {}'.format(g.name, g.id) for g in ctx.author.mutual_guilds])
+                 ['"{}" - {}'.format(g.name, g.id) for g in ctx.author.mutual_guilds])
 
         await ctx.reply('\n'.join(lines))
 
@@ -211,19 +209,16 @@ class SoundManagementCog(commands.Cog):
 
         await ctx.reply('\n'.join(lines))
 
-
     ##############
-    # test_sound #
+    # send_sound #
     ##############
     @commands.command(
-        help="""This command triggers the bot to send you a copy of one of your sound files for listening/testing.
-
-        This command only works in DMs.""",
+        help="""This command triggers the bot to send you a copy of one of your sound files for listening/testing.""",
         brief="""[sound_name] [guild_identifier]""",
-        aliases=['ts'])
-    async def test_sound(self, ctx,
+        aliases=['ss'])
+    async def send_sound(self, ctx,
             sound_name=commands.parameter(
-                description='The sound to test, must be alphanumeric + "-" or "_"'),
+                description='The sound to send, must be alphanumeric + "-" or "_"'),
             guild_identifier=commands.parameter(default=None,
                 description='Server name or server ID'),
            ):
@@ -235,17 +230,16 @@ class SoundManagementCog(commands.Cog):
             traceback.print_exc()
             await ctx.reply(str(e))
 
-        if ctx.guild == None:
-            sound_path = (pathlib.Path('./sounds') /
-                          ctx.author.name /
-                          guild.name /
-                          sound_name
-                         ).with_suffix('.mp3')
-            try:
-                file = discord.File(sound_path)
-            except Exception as e:
-                print(e)
-            await ctx.reply(file=file, content='Here is {}'.format(sound_name))
+        sound_path = (pathlib.Path('./sounds') /
+                      ctx.author.name /
+                      guild.name /
+                      sound_name
+                     ).with_suffix('.mp3')
+        try:
+            file = discord.File(sound_path)
+        except Exception as e:
+            print(e)
+        await ctx.reply(file=file, content='Here is {}'.format(sound_name))
 
 
     def __add_sound_common(self,
@@ -262,11 +256,11 @@ class SoundManagementCog(commands.Cog):
         except Exception as e:
             return str(e)
 
-        file_path = pathlib.Path('./sounds/{}/{}/{}.mp3'.format(ctx.author.name,
-                                                                guild.name,
-                                                                sound_name,
-                                                               ))
-
+        file_path = (pathlib.Path('./sounds') /
+                     ctx.author.name /
+                     guild.name /
+                     sound_name
+                    ).with_suffix('.mp3')
         try:
             self.__process_sound(work_path, file_path, sound_weight)
             return 'Successfully added sound {} to server {}'.format(
@@ -276,6 +270,14 @@ class SoundManagementCog(commands.Cog):
 
 
     def __parse_guild(self, ctx, guild_identifier):
+        """Given context and optionally user input get which guild the command is for
+
+        if the command is from within a guild, use that one. Otherwise it must be
+        from a DM, so search the mutual servers of that user to find one that
+        matches either ID or name and return the Guild object for that identifer.
+
+        Returns Guild or None if no guild found
+        """
         if ctx.guild:
             guild = ctx.guild
         else:
@@ -297,6 +299,7 @@ class SoundManagementCog(commands.Cog):
 
 
     def __parse_sound_info(self, sound_name, sound_weight='0'):
+        """Sanitize the sound name and extract an integer from the weight input"""
         sound_name = ''.join(filter(lambda p: str.isalnum(p) or p in '-_', sound_name))
         try:
             sound_weight = int(sound_weight)

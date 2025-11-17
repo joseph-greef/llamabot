@@ -36,6 +36,7 @@ class MixedAudio(discord.AudioSource):
 
     def read(self):
         if self.__active_sounds:
+            #base silence onto which to mix
             mixed = pydub.AudioSegment.silent(duration=20, frame_rate=48000)
 
             sounds_to_delete = []
@@ -61,9 +62,11 @@ class MixedAudio(discord.AudioSource):
                 raw_data += b'\00' * (expected_bytes - len(raw_data))
             elif len(raw_data) > expected_bytes:
                 raw_data = raw_data[:expected_bytes]
+
+            #opus encode the padded data
             return self.__encoder.encode(raw_data,
                                          discord.opus.Encoder.SAMPLES_PER_FRAME)
 
         else:
+            #empty byte string is the signal for no more data
             return b''
-

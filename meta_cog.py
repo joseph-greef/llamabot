@@ -1,6 +1,7 @@
 
 from discord.ext import commands
 
+
 class MetaCog(commands.Cog):
     def __init__(self, bot):
         self.__bot = bot
@@ -11,4 +12,3 @@ class MetaCog(commands.Cog):
 
             print(f'Logged in as {bot.user} (ID: {bot.user.id})')
             print('------')
-
