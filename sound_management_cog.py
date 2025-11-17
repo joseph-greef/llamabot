@@ -1,4 +1,5 @@
 
+import asyncio
 import typing
 import os
 import pathlib
@@ -14,10 +15,12 @@ class SoundManagementCog(commands.Cog):
     MAX_SOUND_MS = 6000.0
     def __init__(self, bot):
         self.__bot = bot
+        self.__attachment_lock = asyncio.Lock()
+        self.__youtube_lock = asyncio.Lock()
 
-    ########################
-    # add_sound_attachment #
-    ########################
+    ######################
+    # add_sound_attached #
+    ######################
     @commands.command(
         help="""This command adds an attached audio file to your sound list with the specified name and weight.
 
@@ -37,7 +40,7 @@ class SoundManagementCog(commands.Cog):
                 description='Server name or server ID'),
            ):
 
-        async with ctx.typing():
+        async with ctx.typing(), self.__attachment_lock:
             if not attachment or 'audio' not in attachment.content_type:
                 await ctx.reply('Must attach audio file')
                 return
@@ -91,7 +94,7 @@ class SoundManagementCog(commands.Cog):
             await ctx.reply('Start/end time invalid: ' + str(e))
             return
 
-        async with ctx.typing():
+        async with ctx.typing(), self.__youtube_lock:
             try:
                 yt_opts = {
                     'verbose': True,
