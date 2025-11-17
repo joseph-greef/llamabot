@@ -56,18 +56,6 @@ class VoiceCog(commands.Cog):
                         else:
                             self.__upcoming_duties[guild][channel] = [sound_path]
 
-            #user exiting channel
-            if False and before.channel and not after.channel:
-                #if the bot is the only one left in the channel
-                if (len(before.channel.members) == 1 and
-                        before.channel.members[0].id == 1439452220700622878):
-                    for voice_client in self.__bot.voice_clients:
-                        if voice_client.channel == before.channel:
-                            self.__post_sound_cleanup(voice_client, None)
-                            #await voice_client.disconnect(force=False)
-
-
-
           except Exception as e:
             print(e)
 
