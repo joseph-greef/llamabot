@@ -55,7 +55,8 @@ class SoundManagementCog(commands.Cog):
                                                     sound_name,
                                                     sound_weight,
                                                     guild_identifier,
-                                                    work_path))
+                                                    work_path,
+                                                    0))
             work_path.unlink()
 
     #####################
@@ -114,7 +115,8 @@ class SoundManagementCog(commands.Cog):
                                                         sound_name,
                                                         sound_weight,
                                                         guild_identifier,
-                                                        work_path))
+                                                        work_path,
+                                                        10))
                 work_path.unlink()
 
             except Exception as e:
@@ -248,6 +250,7 @@ class SoundManagementCog(commands.Cog):
                            sound_weight,
                            guild_identifier,
                            work_path,
+                           db_reduction,
                           ):
         try:
             guild = self.__parse_guild(ctx, guild_identifier)
@@ -262,7 +265,7 @@ class SoundManagementCog(commands.Cog):
                      sound_name
                     ).with_suffix('.mp3')
         try:
-            self.__process_sound(work_path, file_path, sound_weight)
+            self.__process_sound(work_path, file_path, sound_weight, db_reduction)
             return 'Successfully added sound {} to server {}'.format(
                         sound_name, guild.name)
         except Exception as e:
@@ -310,7 +313,7 @@ class SoundManagementCog(commands.Cog):
         return sound_name, sound_weight
 
 
-    def __process_sound(self, sound_path, save_path, sound_weight):
+    def __process_sound(self, sound_path, save_path, sound_weight, db_reduction):
         sound = pydub.AudioSegment.from_file(sound_path)
 
         speedup_factor = len(sound) / self.MAX_SOUND_MS
@@ -327,6 +330,7 @@ class SoundManagementCog(commands.Cog):
         sound = sound.fade_in(250)
         sound = sound.fade_out(250)
         sound = pydub.effects.normalize(sound)
+        sound = sound - db_reduction
 
         save_path.parent.mkdir(parents=True, exist_ok=True)
         sound.export(save_path, tags={'weight':sound_weight})
