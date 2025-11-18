@@ -34,7 +34,7 @@ class VoiceCog(commands.Cog):
             if after.channel and after.channel != before.channel:
                 guild = member.guild
                 channel = after.channel
-                sound_path = self.__get_sound_path(member.name, guild)
+                sound_path = self.__get_sound_path(member, guild)
                 if sound_path:
                     voice_client = self.__get_voice_client_by_guild(guild)
                     #bot not in any channel
@@ -78,9 +78,9 @@ class VoiceCog(commands.Cog):
         voice_client.play(source, after=after)
 
 
-    def __get_sound_path(self, name, guild):
+    def __get_sound_path(self, member, guild):
         try:
-            sounds = pathlib.Path('./sounds') / name / guild.name
+            sounds = pathlib.Path('./sounds') / str(member.id) / str(guild.id)
             if sounds.exists():
                 sound_choices = []
                 for sound in sounds.iterdir():

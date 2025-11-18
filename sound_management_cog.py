@@ -148,8 +148,8 @@ class SoundManagementCog(commands.Cog):
             await ctx.reply(str(e))
 
         sound_path = (pathlib.Path('./sounds') /
-                      ctx.author.name /
-                      guild.name /
+                      str(ctx.author.id) /
+                      str(guild.id) /
                       sound_name
                      ).with_suffix('.mp3')
 
@@ -190,7 +190,7 @@ class SoundManagementCog(commands.Cog):
                          ):
         #If no guild info and in DM list all sounds
         if guild_identifier == None and ctx.guild == None:
-            sounds_path = pathlib.Path('./sounds') / ctx.author.name
+            sounds_path = pathlib.Path('./sounds') / str(ctx.author.id)
             lines = ['Here are your sounds for all servers']
         else:
             try:
@@ -200,7 +200,7 @@ class SoundManagementCog(commands.Cog):
                 traceback.print_exc()
                 await ctx.reply(str(e))
                 return
-            sounds_path = pathlib.Path('./sounds') / ctx.author.name / guild.name
+            sounds_path = pathlib.Path('./sounds') / str(ctx.author.id) / str(guild.id)
             lines = ['Here are your sounds for server "{}"'.format(guild.name)]
 
         lines += ['Server - Sound name']
@@ -233,8 +233,8 @@ class SoundManagementCog(commands.Cog):
             await ctx.reply(str(e))
 
         sound_path = (pathlib.Path('./sounds') /
-                      ctx.author.name /
-                      guild.name /
+                      str(ctx.author.id) /
+                      str(guild.id) /
                       sound_name
                      ).with_suffix('.mp3')
         try:
@@ -260,8 +260,8 @@ class SoundManagementCog(commands.Cog):
             return str(e)
 
         file_path = (pathlib.Path('./sounds') /
-                     ctx.author.name /
-                     guild.name /
+                     str(ctx.author.id) /
+                     str(guild.id) /
                      sound_name
                     ).with_suffix('.mp3')
         try:
