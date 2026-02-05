@@ -51,12 +51,12 @@ class SoundManagementCog(commands.Cog):
             work_path.parent.mkdir(parents=True, exist_ok=True)
             await attachment.save(work_path)
 
-            await ctx.reply(self.__add_sound_common(ctx,
-                                                    sound_name,
-                                                    sound_weight,
-                                                    guild_identifier,
-                                                    work_path,
-                                                    0))
+            await self.__add_sound_common(ctx,
+                                          sound_name,
+                                          sound_weight,
+                                          guild_identifier,
+                                          work_path,
+                                          0)
             work_path.unlink()
 
     #####################
@@ -111,12 +111,12 @@ class SoundManagementCog(commands.Cog):
                     info_dict = ydl.extract_info(url, download=True)
                     work_path = pathlib.Path(ydl.prepare_filename(info_dict))
 
-                await ctx.reply(self.__add_sound_common(ctx,
-                                                        sound_name,
-                                                        sound_weight,
-                                                        guild_identifier,
-                                                        work_path,
-                                                        10))
+                await self.__add_sound_common(ctx,
+                                              sound_name,
+                                              sound_weight,
+                                              guild_identifier,
+                                              work_path,
+                                              10)
                 work_path.unlink()
 
             except Exception as e:
@@ -244,14 +244,14 @@ class SoundManagementCog(commands.Cog):
         await ctx.reply(file=file, content='Here is {}'.format(sound_name))
 
 
-    def __add_sound_common(self,
-                           ctx,
-                           sound_name,
-                           sound_weight,
-                           guild_identifier,
-                           work_path,
-                           db_reduction,
-                          ):
+    async def __add_sound_common(self,
+                                 ctx,
+                                 sound_name,
+                                 sound_weight,
+                                 guild_identifier,
+                                 work_path,
+                                 db_reduction,
+                                ):
         try:
             guild = self.__parse_guild(ctx, guild_identifier)
             (sound_name, sound_weight) = self.__parse_sound_info(sound_name,
@@ -266,10 +266,12 @@ class SoundManagementCog(commands.Cog):
                     ).with_suffix('.mp3')
         try:
             self.__process_sound(work_path, file_path, sound_weight, db_reduction)
-            return 'Successfully added sound {} to server {}'.format(
-                        sound_name, guild.name)
+            file = discord.File(file_path)
+            await ctx.reply(file=file,
+                            content='Successfully added sound {} to server {}'.format(
+                                        sound_name, guild.name))
         except Exception as e:
-            return 'Could not convert audio file: ' + str(e)
+            await ctx.reply(content='Could not convert audio file: ' + str(e))
 
 
     def __parse_guild(self, ctx, guild_identifier):
@@ -327,8 +329,8 @@ class SoundManagementCog(commands.Cog):
         sound = sound.set_frame_rate(48000)
         sound = sound.set_channels(2)
         sound = sound.set_sample_width(2)
-        sound = sound.fade_in(250)
-        sound = sound.fade_out(250)
+        sound = sound.fade_in(150)
+        sound = sound.fade_out(150)
         sound = pydub.effects.normalize(sound)
         sound = sound - db_reduction
 
